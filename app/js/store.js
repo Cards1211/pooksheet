@@ -185,6 +185,29 @@ export async function addDay(cycleId, wd) {
   return day;
 }
 
+/**
+ * Turn a weekday back on with the exercises it had when it was turned off. Its logged
+ * workouts reconnect too, because they point at the same day. Returns how many exercises
+ * came back, or 0 if this weekday has nothing to bring back (then add a new day instead).
+ */
+export async function restoreDay(cycleId, wd) {
+  const me = userId();
+  const removed = [...cache.days.values()]
+    .filter((d) => d.deleted && d.ownerId === me && d.cycleId === cycleId && d.weekday === wd)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  for (const day of removed) {
+    const when = Date.parse(day.updatedAt);
+    // Only the exercises removed along with the day: one taken out by hand earlier stays out.
+    const withDay = [...cache.slots.values()].filter((s) => s.deleted && s.dayId === day.id
+      && Math.abs(Date.parse(s.updatedAt) - when) < 2000);
+    if (withDay.length) {
+      await restore([['days', day], ...withDay.map((s) => ['slots', s])]);
+      return withDay.length;
+    }
+  }
+  return 0;
+}
+
 /** Soft-delete a day and its exercises. Returns the records for undo. */
 export function removeDay(dayId) {
   const day = get('days', dayId);

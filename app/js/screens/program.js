@@ -82,7 +82,7 @@ export default {
       <header class="screen-head"><h1>Program</h1></header>
       ${cycleCard(cycle)}
       <div class="section-head"><h2>Training days</h2><span class="count">${plural(days.length, 'day')} a week</span></div>
-      <p class="hint">Tap a weekday to add or remove it.</p>
+      <p class="hint">Tap a weekday to turn it on or off. Its exercises are kept.</p>
       ${weekdayPicker(cycle)}
       <div class="stack" style="margin-top:16px">
         ${days.length ? days.map(dayCard) : html`<section class="card empty"><h2>No training days yet</h2><p>Turn on the weekdays you train, then add exercises to each day.</p></section>`}
@@ -129,18 +129,18 @@ export default {
     async 'toggle-weekday'(el, e, { rerender }) {
       const cycle = store.activeCycle();
       const wd = Number(el.dataset.wd);
+      const name = weekday(wd).long;
       const existing = store.dayForWeekday(cycle.id, wd);
       if (existing) {
         const n = store.slots(existing.id).length;
-        const items = await store.removeDay(existing.id);
+        await store.removeDay(existing.id);
         rerender();
-        toast(`Removed ${weekday(wd).long}${n ? ` and its ${plural(n, 'exercise')}` : ''}`, {
-          action: { label: 'Undo', run: async () => { await store.restore(items); rerender(); } },
-        });
+        toast(n ? `${name} is off. Tap it again to bring back its ${plural(n, 'exercise')}.` : `${name} is off`);
       } else {
-        await store.addDay(cycle.id, wd);
+        const back = await store.restoreDay(cycle.id, wd);
+        if (!back) await store.addDay(cycle.id, wd);
         rerender();
-        toast(`Added ${weekday(wd).long}`);
+        toast(back ? `${name} is back with its ${plural(back, 'exercise')}` : `Added ${name}`);
       }
     },
   },
