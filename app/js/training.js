@@ -1,6 +1,6 @@
 // Training logic: units, "last week" lookup, personal records, overload hints.
 import * as store from './store.js';
-import { parseISO, addDays, toISO, fmtDay } from './dates.js';
+import { parseISO, mondayOf, daysBetween, fmtDay } from './dates.js';
 
 const LB_PER_KG = 2.20462;
 
@@ -53,11 +53,10 @@ function history(exerciseId, excludeSessionId) {
 }
 
 /**
- * The previous performance of an exercise before `date`:
- * exactly one week earlier if logged ("Last week"); otherwise the most recent time on the
- * same weekday (so Thursday compares with Thursday); otherwise the most recent time at all.
+ * The previous performance of an exercise before `date`: the last time in this same workout,
+ * otherwise the last time at all. Labelled "Last week" when that was in the previous calendar week.
  */
-export function lastPerformance(exerciseId, date, excludeSessionId) {
+export function lastPerformance(exerciseId, date, excludeSessionId, day) {
   const bySession = new Map();
   for (const { set, session } of history(exerciseId, excludeSessionId)) {
     if (session.date >= date) continue;
@@ -65,19 +64,19 @@ export function lastPerformance(exerciseId, date, excludeSessionId) {
     bySession.get(session.id).sets.push(set);
   }
   if (!bySession.size) return null;
-  const weekAgo = toISO(addDays(parseISO(date), -7));
   const list = [...bySession.values()].sort((a, b) => b.session.date.localeCompare(a.session.date));
-  const wd = parseISO(date).getDay();
-  const pick = list.find((x) => x.session.date === weekAgo)
-    || list.find((x) => parseISO(x.session.date).getDay() === wd)
-    || list[0];
+  // Same workout first, across cycles too (a copied workout keeps its name).
+  const sameWorkout = ({ session }) => !!day
+    && (session.dayId === day.id || store.get('days', session.dayId)?.name === day.name);
+  const pick = list.find(sameWorkout) || list[0];
   pick.sets.sort((a, b) => a.index - b.index);
   const note = store.noteOf(pick.session.id, exerciseId)?.text || '';
+  const weeksAgo = daysBetween(mondayOf(parseISO(pick.session.date)), mondayOf(parseISO(date))) / 7;
   return {
     session: pick.session,
     sets: pick.sets,
     note,
-    label: pick.session.date === weekAgo ? 'Last week' : `Last time · ${fmtDay(parseISO(pick.session.date))}`,
+    label: weeksAgo === 1 ? 'Last week' : `Last time · ${fmtDay(parseISO(pick.session.date))}`,
   };
 }
 

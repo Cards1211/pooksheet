@@ -34,7 +34,7 @@ export default {
     async fresh(el, e, { go }) {
       await store.createUser();
       go('#/program');
-      toast('Tap the weekdays you train');
+      toast('Add your first workout');
     },
     'restore-pick': () => pickFile(),
     'restore-cancel': (el, e, { rerender }) => { clearPending(); rerender(); },

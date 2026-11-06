@@ -458,8 +458,7 @@ input[type="checkbox"].switch { accent-color: var(--switch-on); width: 51px; hei
 /* ---------- program: day cards ---------- */
 .day-card { position: relative; padding-right: 48px; }
 .day-card .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.day-card .wkday { font-size: var(--fs-lg); font-weight: 800; }
-.day-card .name { font-size: var(--fs-lg); font-weight: 500; color: var(--text-2); }
+.day-card .name { font-size: var(--fs-lg); font-weight: 800; }
 .day-card .list {
   margin-top: 6px;
   color: var(--text-2);
@@ -619,7 +618,8 @@ input[type="checkbox"].switch { accent-color: var(--switch-on); width: 51px; hei
 .today-head .title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .today-head .title-row h1 { min-width: 0; }
 .today-head .sub-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; margin-top: 2px; }
-.today-head .sub-row .sub { margin-top: 0; }
+.today-head .sub-row .sub { margin-top: 0; min-width: 0; }
+.today-head .sub-tools { display: flex; gap: 8px; flex: none; }
 .today-head .head-count { flex: none; font-size: var(--fs-md); font-weight: 700; color: var(--text-2); white-space: nowrap; }
 .week-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .week-nav .wk-title { flex: 1; min-width: 0; margin: 0; text-align: center; font-size: var(--fs-md); }
@@ -838,6 +838,57 @@ input[type="checkbox"].switch { accent-color: var(--switch-on); width: 51px; hei
 
 .welcome-icon { display: block; margin: 0 0 18px; border-radius: 19px; box-shadow: var(--shadow-card); }
 .about { margin: 24px 0 0; font-size: var(--fs-sm); color: var(--text-2); text-align: center; }
+
+/* ---------- Today: pick a workout ---------- */
+.wo-head { margin: 20px 4px 10px; font-size: var(--fs-lg); font-weight: 800; }
+.wo-head-sub { margin-top: 24px; font-size: var(--fs-md); color: var(--text-2); }
+.wo-list { display: grid; gap: 10px; }
+.wo-card { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 76px; padding: 12px 14px 12px 18px; text-align: left; }
+.wo-card .grow { flex: 1; min-width: 0; }
+.wo-card .title { display: block; font-size: var(--fs-lg); font-weight: 800; }
+.wo-card .meta { display: block; margin-top: 2px; font-size: var(--fs-sm); color: var(--text-2); }
+.wo-card > .icon { color: var(--text-2); }
+/* bold 19px: the Paired Label Rule for labels on the action colour */
+.wo-start {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: var(--action);
+  color: var(--on-action);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1.5px var(--ring);
+}
+.wo-done-list { gap: 6px; }
+.wo-done {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 48px;
+  padding-right: 6px;
+  border-radius: var(--r-btn);
+  box-shadow: inset 0 0 0 2px var(--line-strong);
+}
+.wo-done-open {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 10px 8px 18px;
+  border-radius: var(--r-btn);
+  text-align: left;
+  color: var(--text);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+.wo-done-open .grow { flex: 1; min-width: 0; }
+.wo-done-open .when { flex: none; font-weight: 500; color: var(--text-2); font-size: var(--fs-sm); }
+.wo-again { flex: none; }
 
 /* ---------- rest timer ---------- */
 .has-timer #view { padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 40px + 76px); }

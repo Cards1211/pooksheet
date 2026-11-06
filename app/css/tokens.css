@@ -63,7 +63,7 @@
   --toast-bg: #0A3323;
   --toast-text: #FFB7C5;
   --focus: #0A3323;
-  --dot: var(--highlight);
+  --dot: #0A3323;             /* logged-day dot: honey on the cherry ground was 1.05:1 */
   --selection-bg: var(--highlight);
   --ring: #0A3323;            /* outlines filled pastel states so they read on pastel grounds */
   --choice-edge: #0A3323;     /* edge of a chosen row in a list */
@@ -91,6 +91,7 @@
     --highlight: #D3968C;     /* rosy brown */
     --on-highlight: #0A3323;  /* 5.6:1 */
     --timer-arc: var(--highlight); /* rosy, 4.4:1 on the field track */
+    --dot: var(--highlight);
     --switch-on: var(--action);
     --toast-bg: #F7F4D5;
     --toast-text: #0A3323;
@@ -121,6 +122,7 @@
   --highlight: #D3968C;
   --on-highlight: #0A3323;
   --timer-arc: var(--highlight);
+  --dot: var(--highlight);
   --switch-on: var(--action);
   --toast-bg: #F7F4D5;
   --toast-text: #0A3323;

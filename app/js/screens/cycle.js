@@ -19,8 +19,8 @@ export default {
         <h1>${cycle.name}</h1>
         <p class="sub">${cycle.title ? `${cycle.title} · ` : ''}${cycleDates(cycle)} · ${plural(store.workoutCount(cycle.id), 'workout')}</p>
       </header>
-      <div class="section-head"><h2>Training days</h2><span class="count">${plural(days.length, 'day')} a week</span></div>
-      <div class="stack">${days.length ? days.map(dayCard) : html`<section class="card empty"><p>This cycle had no training days.</p></section>`}</div>
+      <div class="section-head"><h2>Workouts</h2><span class="count">${days.length || ''}</span></div>
+      <div class="stack">${days.length ? days.map(dayCard) : html`<section class="card empty"><p>This cycle had no workouts.</p></section>`}</div>
       <p class="hint" style="margin-top:16px">Past cycles are read only. Logged workouts show up under Progress.</p>
     `;
   },

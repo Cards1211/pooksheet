@@ -1,11 +1,11 @@
 import * as store from '../store.js';
 import { html, icon, range, plural } from '../util.js';
-import { weekday, fmtDay, cycleEnd, parseISO } from '../dates.js';
+import { fmtDay, cycleEnd, parseISO } from '../dates.js';
 import { unitFor } from '../training.js';
 
 export const LOAD_LABEL = { weighted: 'Weight', bodyweight: 'Bodyweight', bodyweight_plus: 'Bodyweight + weight' };
 
-export const dayName = (d) => d.name?.trim() || 'Training day';
+export const dayName = (d) => d.name?.trim() || 'Workout';
 
 export const cycleDates = (cycle) => `${fmtDay(parseISO(cycle.startDate))} – ${fmtDay(cycleEnd(cycle))}`;
 
@@ -20,13 +20,13 @@ export function slotMeta(slot, ex) {
   return html`${bits.join(' · ')}${ex.lp ? html` <span class="badge" title="Lengthened partials">LP</span>` : ''}`;
 }
 
-/** Card linking to a day's editor. */
+/** Card linking to a workout's editor. */
 export function dayCard(d) {
   const list = store.slots(d.id);
   const names = list.map((s) => store.get('exercises', s.exerciseId)?.name).filter(Boolean);
   const shown = names.slice(0, 3).join(' · ') + (names.length > 3 ? ` · +${names.length - 3} more` : '');
   return html`<a class="card day-card pressable" href="#/program/day/${d.id}">
-    <span class="head"><span class="wkday">${weekday(d.weekday).short}</span><span class="name">${dayName(d)}</span></span>
+    <span class="head"><span class="name">${dayName(d)}</span></span>
     ${names.length
       ? html`<span class="list">${plural(names.length, 'exercise')}: ${shown}</span>`
       : html`<span class="empty-line">No exercises yet</span>`}

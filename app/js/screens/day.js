@@ -1,8 +1,7 @@
 import * as store from '../store.js';
 import { html, icon, plural, clamp, range } from '../util.js';
-import { WEEKDAYS, weekday } from '../dates.js';
 import { toast, backLink, segmented, stepper } from '../ui.js';
-import { slotMeta } from './common.js';
+import { slotMeta, dayName } from './common.js';
 import * as training from '../training.js';
 
 let openSlotId = null;
@@ -238,49 +237,49 @@ export default {
   depth: 1,
   title: (p) => {
     const d = store.get('days', p.id);
-    return d ? weekday(d.weekday).long : 'Day';
+    return d ? dayName(d) : 'Workout';
   },
 
   render({ id }) {
     const day = store.get('days', id);
     if (!day || day.deleted) {
-      return html`<header class="screen-head pushed">${backLink('#/program', 'Program')}<h1>Day not found</h1></header>
-        <section class="card empty"><p>This day was removed from the program.</p></section>`;
+      return html`<header class="screen-head pushed">${backLink('#/program', 'Program')}<h1>Workout not found</h1></header>
+        <section class="card empty"><p>This workout was removed from the program.</p></section>`;
     }
     if (openDayId !== id) { openDayId = id; openSlotId = null; weeksSlot = null; editWeek = null; }
     const cycle = store.get('cycles', day.cycleId);
     const editable = cycle.status === 'active';
     const list = store.slots(day.id);
-    const taken = new Set(store.days(cycle.id).filter((d) => d.id !== day.id).map((d) => d.weekday));
+    const siblings = store.days(cycle.id);
+    const place = siblings.findIndex((d) => d.id === day.id);
     const back = editable ? backLink('#/program', 'Program') : backLink(`#/program/cycle/${cycle.id}`, cycle.name);
 
     return html`
       <header class="screen-head pushed">${back}
-        <h1 id="day-title">${weekday(day.weekday).long}${day.name ? html` · ${day.name}` : ''}</h1>
+        <h1 id="day-title">${dayName(day)}</h1>
         ${editable ? '' : html`<p class="sub">${cycle.name} · read only</p>`}
       </header>
 
       ${editable ? html`<section class="card">
-        <label class="field"><span class="field-label">Day name</span>
-          <input class="input" data-field="day-name" value="${day.name}" placeholder="e.g. Upper, Push, Legs" maxlength="40" autocapitalize="words" autocomplete="off" enterkeyhint="done">
+        <label class="field"><span class="field-label">Workout name</span>
+          <input class="input" data-field="day-name" value="${day.name}" placeholder="e.g. Upper A, Push, Legs" maxlength="40" autocapitalize="words" autocomplete="off" enterkeyhint="done">
         </label>
-        <div class="field"><span class="field-label">Trains on</span>
-          <div class="weekdays" role="radiogroup" aria-label="Weekday">
-            ${WEEKDAYS.map((w) => html`<button type="button" class="wd" role="radio" data-action="move-day" data-wd="${w.n}"
-              aria-checked="${String(w.n === day.weekday)}" aria-label="${w.long}${taken.has(w.n) ? ', already a training day' : ''}"
-              ${taken.has(w.n) ? 'disabled' : ''}>${w.two}</button>`)}
+        ${siblings.length > 1 ? html`<div class="field"><span class="field-label">Place in your list: ${place + 1} of ${siblings.length}</span>
+          <div class="btn-row">
+            <button type="button" class="btn btn-quiet" data-action="move-workout" data-dir="-1" ${place === 0 ? 'disabled' : ''}>${icon('up-arrow')}Earlier</button>
+            <button type="button" class="btn btn-quiet" data-action="move-workout" data-dir="1" ${place === siblings.length - 1 ? 'disabled' : ''}>${icon('down-arrow')}Later</button>
           </div>
-        </div>
+        </div>` : ''}
       </section>` : ''}
 
       <div class="section-head"><h2>Exercises</h2><span class="count">${list.length || ''}</span></div>
       ${list.length
         ? html`<ol class="slot-list" id="slots">${list.map((s, i) => slotItem(day, s, i, list.length, editable))}</ol>`
-        : html`<section class="card empty"><h2>No exercises yet</h2><p>Add the first exercise for ${weekday(day.weekday).long}.</p></section>`}
+        : html`<section class="card empty"><h2>No exercises yet</h2><p>Add the first exercise for ${dayName(day)}.</p></section>`}
 
       ${editable ? html`
         <a class="btn btn-primary btn-block" style="margin-top:16px" href="#/program/day/${day.id}/add">${icon('plus')}Add exercise</a>
-        <button type="button" class="btn btn-quiet btn-block" style="margin-top:28px" data-action="remove-day">Stop training on ${weekday(day.weekday).long}s</button>` : ''}
+        <button type="button" class="btn btn-quiet btn-block" style="margin-top:28px" data-action="remove-day">Remove this workout</button>` : ''}
     `;
   },
 
@@ -363,13 +362,12 @@ export default {
       toast(`Removed ${ex.name}`, { action: { label: 'Undo', run: async () => { await store.restore(items); rerender(); } } });
     },
 
-    async 'move-day'(el, e, { params, rerender }) {
-      const wd = Number(el.dataset.wd);
-      const day = store.get('days', params.id);
-      if (wd === day.weekday) return;
-      await store.patch('days', day.id, { weekday: wd });
+    async 'move-workout'(el, e, { params, rerender }) {
+      await store.moveDay(params.id, Number(el.dataset.dir));
       rerender();
-      toast(`Moved to ${weekday(wd).long}`);
+      // keep focus on the same key, or on the other one if this end of the list disabled it
+      (document.querySelector(`[data-action="move-workout"][data-dir="${el.dataset.dir}"]:not(:disabled)`)
+        || document.querySelector('[data-action="move-workout"]:not(:disabled)'))?.focus({ preventScroll: true });
     },
 
     async 'remove-day'(el, e, { params, go }) {
@@ -377,7 +375,7 @@ export default {
       const n = store.slots(day.id).length;
       const items = await store.removeDay(day.id);
       go('#/program');
-      toast(`Removed ${weekday(day.weekday).long}${n ? ` and its ${plural(n, 'exercise')}` : ''}`, {
+      toast(`Removed ${dayName(day)}${n ? ` and its ${plural(n, 'exercise')}` : ''}`, {
         action: { label: 'Undo', run: async () => { await store.restore(items); location.hash = `#/program/day/${day.id}`; } },
       });
     },
@@ -395,8 +393,8 @@ export default {
 
     if (field === 'day-name') {
       const name = t.value.trim();
-      const day = await store.patch('days', params.id, { name });
-      document.getElementById('day-title').textContent = `${weekday(day.weekday).long}${name ? ` · ${name}` : ''}`;
+      await store.patch('days', params.id, { name });
+      document.getElementById('day-title').textContent = name || 'Workout';
       return;
     }
 

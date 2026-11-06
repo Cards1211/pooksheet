@@ -93,6 +93,11 @@ function navigate() {
   if (!sameScreen) view.focus({ preventScroll: true });
 }
 
+// Coming back to the app: the current screen can catch up (for example, a new calendar day).
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && current) current.screen.resume?.(ctx());
+});
+
 async function run(fn, ...args) {
   try {
     await fn(...args);

@@ -4,10 +4,10 @@
 
 import * as db from './db.js';
 import { uuid, nowISO, byName } from './util.js';
-import { todayISO, toISO, nextMonday, weekNumber } from './dates.js';
+import { todayISO, toISO, nextMonday, weekNumber, weekday } from './dates.js';
 
 export const APP_ID = 'workout-tracker';
-export const FORMAT = 1;
+export const FORMAT = 2; // 2: workouts are a list you pick from, not tied to weekdays
 
 const cache = Object.fromEntries(db.STORES.map((s) => [s, new Map()]));
 let meta = {};
@@ -20,6 +20,61 @@ export async function load() {
   const { stores, meta: m } = await db.readAll();
   for (const s of db.STORES) cache[s] = new Map((stores[s] || []).map((r) => [r.id, r]));
   meta = m;
+  await upgrade();
+}
+
+/** Exercises removed along with a workout. One taken out by hand earlier stays out. */
+function slotsRemovedWith(day) {
+  const when = Date.parse(day.updatedAt);
+  return [...cache.slots.values()].filter((s) => s.deleted && s.dayId === day.id
+    && Math.abs(Date.parse(s.updatedAt) - when) < 2000);
+}
+
+/**
+ * Bring older saved data and old backups forward, when workouts were tied to weekdays.
+ * Logged sets and their dates are never touched. Safe to run again if it gets interrupted.
+ */
+async function upgrade() {
+  if ((meta.schema || 1) >= FORMAT) return;
+  const changed = [];
+  const put = (store, rec) => { cache[store].set(rec.id, rec); changed.push([store, rec]); };
+  for (const cycleId of new Set([...cache.days.values()].map((d) => d.cycleId))) {
+    const inCycle = () => [...cache.days.values()].filter((d) => d.cycleId === cycleId);
+
+    // A blank day left behind by turning a weekday off and on gets its old exercises back.
+    const hasSlots = (id) => [...cache.slots.values()].some((s) => !s.deleted && s.dayId === id);
+    const hasLog = (id) => [...cache.sessions.values()].some((s) => !s.deleted && s.dayId === id);
+    for (const blank of inCycle().filter((d) => !d.deleted && !hasSlots(d.id) && !hasLog(d.id))) {
+      const old = inCycle().filter((d) => d.deleted && d.weekday === blank.weekday && slotsRemovedWith(d).length)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+      if (!old) continue;
+      const back = slotsRemovedWith(old);
+      put('days', touched(blank, { deleted: true }));
+      put('days', touched(old, { deleted: false, name: blank.name?.trim() ? blank.name : old.name }));
+      for (const s of back) put('slots', touched(s, { deleted: false }));
+    }
+
+    // Every workout gets a name that's unique in its cycle (Upper, Upper becomes Upper A, Upper B)
+    // and a place in the list, in the order the weekdays ran.
+    const base = (d) => d.name?.trim() || (d.weekday ? weekday(d.weekday).long : 'Workout');
+    const live = inCycle().filter((d) => !d.deleted)
+      .sort((a, b) => (a.weekday ?? 99) - (b.weekday ?? 99) || a.order - b.order);
+    const total = new Map();
+    for (const d of live) total.set(base(d).toLowerCase(), (total.get(base(d).toLowerCase()) || 0) + 1);
+    const seen = new Map();
+    live.forEach((d, order) => {
+      const key = base(d).toLowerCase();
+      const n = seen.get(key) || 0;
+      seen.set(key, n + 1);
+      const name = total.get(key) > 1 ? `${base(d)} ${String.fromCharCode(65 + n)}` : base(d);
+      if (name !== d.name || order !== d.order) put('days', touched(d, { name, order }));
+    });
+    // Removed ones keep their timestamp, which is how their exercises are found again.
+    for (const d of inCycle().filter((x) => x.deleted && !x.name?.trim())) put('days', { ...d, name: base(d) });
+  }
+  await db.putMany(changed);
+  meta.schema = FORMAT;
+  await db.setMeta('schema', FORMAT);
 }
 
 export const userId = () => meta.currentUserId || null;
@@ -73,7 +128,7 @@ export const activeCycle = () => cycles().find((c) => c.status === 'active') || 
 export const pastCycles = () => cycles().filter((c) => c.status !== 'active');
 
 export const days = (cycleId) =>
-  mine('days').filter((d) => d.cycleId === cycleId).sort((a, b) => a.weekday - b.weekday || a.order - b.order);
+  mine('days').filter((d) => d.cycleId === cycleId).sort((a, b) => a.order - b.order || a.createdAt.localeCompare(b.createdAt));
 
 export const slots = (dayId) =>
   mine('slots').filter((s) => s.dayId === dayId).sort((a, b) => a.order - b.order);
@@ -124,10 +179,6 @@ export function setWeekTarget(slotId, week, t) {
   return patch('slots', slotId, { weekTargets });
 }
 
-export function dayForWeekday(cycleId, wd) {
-  return days(cycleId).find((d) => d.weekday === wd) || null;
-}
-
 export function currentWeek(cycle) {
   return weekNumber(cycle, todayISO());
 }
@@ -162,7 +213,7 @@ export async function startNewCycle({ startDate, copy }) {
   if (prev) items.push(['cycles', touched(prev, { status: 'done' })]);
   if (copy && prev) {
     for (const d of days(prev.id)) {
-      const nd = make('days', { cycleId: cycle.id, weekday: d.weekday, name: d.name, order: d.order });
+      const nd = make('days', { cycleId: cycle.id, name: d.name, order: d.order });
       items.push(['days', nd]);
       for (const s of slots(d.id)) {
         items.push(['slots', make('slots', {
@@ -179,33 +230,48 @@ export async function startNewCycle({ startDate, copy }) {
 
 // ---------- days ----------
 
-export async function addDay(cycleId, wd) {
-  const day = make('days', { cycleId, weekday: wd, name: '', order: 0 });
+// A "day" in the data is a workout: it isn't tied to a weekday, and you pick one whenever you train.
+
+export async function addDay(cycleId) {
+  const list = days(cycleId);
+  const used = new Set(list.map((d) => d.name.toLowerCase()));
+  let n = list.length + 1;
+  while (used.has(`workout ${n}`)) n += 1;
+  const day = make('days', { cycleId, name: `Workout ${n}`, order: list.length ? list[list.length - 1].order + 1 : 0 });
   await commit([['days', day]]);
   return day;
 }
 
-/**
- * Turn a weekday back on with the exercises it had when it was turned off. Its logged
- * workouts reconnect too, because they point at the same day. Returns how many exercises
- * came back, or 0 if this weekday has nothing to bring back (then add a new day instead).
- */
-export async function restoreDay(cycleId, wd) {
+/** Move a workout up or down the list, which sets what's suggested next. */
+export async function moveDay(dayId, dir) {
+  const list = days(get('days', dayId).cycleId);
+  const i = list.findIndex((d) => d.id === dayId);
+  const j = i + dir;
+  if (j < 0 || j >= list.length) return;
+  [list[i], list[j]] = [list[j], list[i]];
+  await commit(list.map((d, order) => ['days', touched(d, { order })]));
+}
+
+/** Removed workouts that still have exercises to bring back, newest first. */
+export function removedDays(cycleId) {
   const me = userId();
-  const removed = [...cache.days.values()]
-    .filter((d) => d.deleted && d.ownerId === me && d.cycleId === cycleId && d.weekday === wd)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  for (const day of removed) {
-    const when = Date.parse(day.updatedAt);
-    // Only the exercises removed along with the day: one taken out by hand earlier stays out.
-    const withDay = [...cache.slots.values()].filter((s) => s.deleted && s.dayId === day.id
-      && Math.abs(Date.parse(s.updatedAt) - when) < 2000);
-    if (withDay.length) {
-      await restore([['days', day], ...withDay.map((s) => ['slots', s])]);
-      return withDay.length;
-    }
-  }
-  return 0;
+  return [...cache.days.values()]
+    .filter((d) => d.deleted && d.ownerId === me && d.cycleId === cycleId)
+    .map((day) => ({ day, count: slotsRemovedWith(day).length }))
+    .filter((x) => x.count)
+    .sort((a, b) => b.day.updatedAt.localeCompare(a.day.updatedAt));
+}
+
+/** Bring a removed workout back with its exercises. Its logged workouts reconnect too. */
+export async function restoreDay(dayId) {
+  const day = get('days', dayId);
+  const back = slotsRemovedWith(day);
+  const list = days(day.cycleId);
+  await commit([
+    ['days', touched(day, { deleted: false, order: list.length ? list[list.length - 1].order + 1 : 0 })],
+    ...back.map((s) => ['slots', touched(s, { deleted: false })]),
+  ]);
+  return back.length;
 }
 
 /** Soft-delete a day and its exercises. Returns the records for undo. */
@@ -263,15 +329,24 @@ export async function reorderSlots(orderedIds) {
 export const allSessions = () => mine('sessions');
 export const allSets = () => mine('sets');
 
-export function findSession(cycleId, dayId, week) {
-  return mine('sessions').find((s) => s.cycleId === cycleId && s.dayId === dayId && s.week === week) || null;
+export function findSession(dayId, date) {
+  return mine('sessions').find((s) => s.dayId === dayId && s.date === date) || null;
 }
 
-/** The session for a day of a week, created on first use. `date` is that day's calendar date. */
-export async function ensureSession(cycleId, dayId, week, date) {
-  const found = findSession(cycleId, dayId, week);
+/** Workouts with something logged on a date (sets or a note), most recently started first. */
+export function sessionsOn(cycleId, date) {
+  const counts = setsBySession();
+  const noted = new Set(mine('notes').map((n) => n.sessionId));
+  return mine('sessions').filter((s) => s.cycleId === cycleId && s.date === date && (counts.get(s.id) || noted.has(s.id)))
+    .sort((a, b) => (b.startedAt || '').localeCompare(a.startedAt || ''));
+}
+
+/** A workout on a real date, created when its first set or note is saved. */
+export async function ensureSession(cycle, dayId, date) {
+  const found = findSession(dayId, date);
   if (found) return found;
-  const s = make('sessions', { cycleId, dayId, week, date, note: '', startedAt: nowISO(), finishedAt: null });
+  const week = Math.min(Math.max(weekNumber(cycle, date), 1), cycle.weeks);
+  const s = make('sessions', { cycleId: cycle.id, dayId, week, date, note: '', startedAt: nowISO(), finishedAt: null });
   await commit([['sessions', s]]);
   return s;
 }
@@ -352,7 +427,7 @@ export async function importBackup(obj) {
   inspectBackup(obj);
   const data = {};
   for (const s of db.STORES) data[s] = obj.data[s] || [];
-  await db.replaceAll(data, { currentUserId: obj.ownerId });
+  await db.replaceAll(data, { currentUserId: obj.ownerId, schema: obj.format || 1 });
   await load();
   if (!profile()) {
     // a backup without its profile still restores; give it default settings

@@ -1,33 +1,57 @@
-// Today: pick a week and day (today by default, any past day for back-filling),
-// then log each exercise's sets beside last time's numbers.
+// Today: pick a date (today by default, any past day for back-filling) and which workout you
+// did on it, then log each exercise's sets beside last time's numbers.
 import * as store from '../store.js';
 import * as training from '../training.js';
-import { html, icon, range, clamp } from '../util.js';
+import { html, icon, range, clamp, plural } from '../util.js';
 import {
   WEEKDAYS, weekday, todayISO, toISO, parseISO, isoWeekday, dateFor, addDays,
-  fmtDay, fmtLong, fmtShortWeekday, cycleEnd,
+  fmtDay, fmtLong, fmtShortWeekday, cycleEnd, weekNumber, mondayOf,
 } from '../dates.js';
 import { toast } from '../ui.js';
 import * as timer from '../timer.js';
 import { dayName } from './common.js';
 
-let sel = null;               // { cycleId, week, wd }
+let sel = null;               // { cycleId, date, dayId, picking, opened }: what's on screen
 const drafts = new Map();     // `${cardKey}|${i}` -> { weight, reps } typed but not logged yet
 const extraRows = new Map();  // cardKey -> rows added beyond the minimum
 const notesOpen = new Set();  // cardKey
 
-const cardKey = (dayId, week, exId) => `${dayId}|${week}|${exId}`;
+const LATE_WORKOUT_MS = 3 * 60 * 60 * 1000;
 
-function todaySel(cycle) {
-  return {
-    cycleId: cycle.id,
-    week: clamp(store.currentWeek(cycle), 1, cycle.weeks),
-    wd: isoWeekday(parseISO(todayISO())),
-  };
-}
+const cardKey = (dayId, date, exId) => `${dayId}|${date}|${exId}`;
+const weekOf = (cycle, date) => clamp(weekNumber(cycle, date), 1, cycle.weeks);
 /** Weeks up to the current one can be opened; later weeks can't be logged yet. */
 const lastOpenWeek = (cycle) => clamp(store.currentWeek(cycle), 1, cycle.weeks);
-const selectionDate = (cycle) => dateFor(cycle, sel.week, sel.wd);
+/** The latest date that can be opened: today, or the cycle's last day once it has ended. */
+function latestDate(cycle) {
+  const end = toISO(cycleEnd(cycle));
+  return todayISO() > end ? end : todayISO();
+}
+const newSel = (cycle) => ({ cycleId: cycle.id, date: latestDate(cycle), dayId: null, picking: false, opened: todayISO() });
+
+/**
+ * A live workout: logging for today, or one that began on its own date and had a set in the
+ * last 3 hours (a late session running past midnight). Back-filling a past day is neither.
+ */
+function isLive(dateISO, session) {
+  if (dateISO >= todayISO()) return true;
+  if (!session?.startedAt || toISO(new Date(session.startedAt)) !== session.date) return false;
+  const last = Math.max(0, ...store.setsOf(session.id).map((s) => Date.parse(s.updatedAt)));
+  return Date.now() - last < LATE_WORKOUT_MS;
+}
+
+/** A new calendar day goes back to today, unless a workout is still running past midnight. */
+function isStale(cycle) {
+  if (sel.cycleId !== cycle.id) return true;
+  if (sel.opened === todayISO()) return false;
+  return !(sel.dayId && isLive(sel.date, store.findSession(sel.dayId, sel.date)));
+}
+
+/** A rerender replaces the screen, so put keyboard and VoiceOver focus back somewhere sensible. */
+function refocus(selector) {
+  const el = (selector && document.querySelector(selector)) || document.querySelector('#view h1');
+  el?.focus({ preventScroll: true });
+}
 
 // ---------- pieces ----------
 
@@ -39,26 +63,26 @@ function weekRange(monday) {
     : `${fmtDay(monday)} – ${fmtDay(sunday)}`;
 }
 
-function weekNav(cycle) {
-  const monday = dateFor(cycle, sel.week, 1);
+function weekNav(cycle, week) {
+  const monday = dateFor(cycle, week, 1);
   return html`<div class="week-nav">
-    <button type="button" class="btn-tool icon-only" data-action="week" data-dir="-1" aria-label="Previous week" ${sel.week <= 1 ? 'disabled' : ''}>${icon('back')}</button>
-    <p class="wk-title"><strong>Week ${sel.week}</strong> <span>${weekRange(monday)}</span></p>
-    <button type="button" class="btn-tool icon-only" data-action="week" data-dir="1" aria-label="Next week" ${sel.week >= lastOpenWeek(cycle) ? 'disabled' : ''}>${icon('next')}</button>
+    <button type="button" class="btn-tool icon-only" data-action="week" data-dir="-1" aria-label="Previous week" ${week <= 1 ? 'disabled' : ''}>${icon('back')}</button>
+    <p class="wk-title"><strong>Week ${week}</strong> <span>${weekRange(monday)}</span></p>
+    <button type="button" class="btn-tool icon-only" data-action="week" data-dir="1" aria-label="Next week" ${week >= lastOpenWeek(cycle) ? 'disabled' : ''}>${icon('next')}</button>
   </div>`;
 }
 
-function dayStrip(cycle) {
+function dayStrip(cycle, week) {
   const today = todayISO();
-  return html`<div class="weekdays day-strip" role="group" aria-label="Days of week ${sel.week}">
+  return html`<div class="weekdays day-strip" role="group" aria-label="Days of week ${week}">
     ${WEEKDAYS.map((w) => {
-      const d = store.dayForWeekday(cycle.id, w.n);
-      const s = d && store.findSession(cycle.id, d.id, sel.week);
-      const logged = !!(s && store.setsOf(s.id).length);
-      const isToday = toISO(dateFor(cycle, sel.week, w.n)) === today;
-      const label = `${w.long}${d ? `, ${dayName(d)}` : ', rest day'}${logged ? ', logged' : ''}${isToday ? ', today' : ''}`;
-      return html`<button type="button" class="wd ${logged ? 'logged' : ''} ${isToday ? 'is-today' : ''}" data-action="pick-day" data-wd="${w.n}"
-        aria-pressed="${String(w.n === sel.wd)}" aria-label="${label}" ${d ? '' : 'disabled'}>${w.two}</button>`;
+      const date = dateFor(cycle, week, w.n);
+      const iso = toISO(date);
+      const names = store.sessionsOn(cycle.id, iso).map((s) => store.get('days', s.dayId)).filter(Boolean).map(dayName);
+      const isToday = iso === today;
+      const label = `${w.long}, ${fmtDay(date)}${names.length ? `, logged ${names.join(' and ')}` : ''}${isToday ? ', today' : ''}`;
+      return html`<button type="button" class="wd ${names.length ? 'logged' : ''} ${isToday ? 'is-today' : ''}" data-action="pick-date" data-date="${iso}"
+        aria-pressed="${String(iso === sel.date)}" aria-label="${label}" ${iso > today ? 'disabled' : ''}>${w.two}</button>`;
     })}
   </div>`;
 }
@@ -100,12 +124,12 @@ function setRow({ key, i, set, ghost, ex, target, pr }) {
 }
 
 function exerciseCard({ day, week, dateISO, session, slot, ex }) {
-  const key = cardKey(day.id, week, ex.id);
+  const key = cardKey(day.id, dateISO, ex.id);
   const u = training.unitFor(ex);
   const target = slot ? store.targetsFor(slot, week) : null;
   const logged = session ? store.setsOf(session.id, ex.id) : [];
   const byIndex = new Map(logged.map((s) => [s.index, s]));
-  const last = training.lastPerformance(ex.id, dateISO, session?.id);
+  const last = training.lastPerformance(ex.id, dateISO, session?.id, day);
   const prs = session ? training.sessionPRs(session.id, ex.id) : new Map();
   const hint = logged.length === 0 ? training.overloadHint(ex, target, last) : null;
   const base = target ? target.setsMin : Math.max(1, last?.sets.length || 1);
@@ -149,8 +173,9 @@ function exerciseCard({ day, week, dateISO, session, slot, ex }) {
   </li>`;
 }
 
-function workout(cycle, day, week, dateISO) {
-  const session = store.findSession(cycle.id, day.id, week);
+function workout(cycle, day, dateISO) {
+  const week = weekOf(cycle, dateISO);
+  const session = store.findSession(day.id, dateISO);
   const slotList = store.slots(day.id);
   const planIds = new Set(slotList.map((s) => s.exerciseId));
   const loggedSets = session ? store.setsOf(session.id) : [];
@@ -163,7 +188,7 @@ function workout(cycle, day, week, dateISO) {
   ].filter((c) => c.ex);
 
   if (!cards.length) {
-    return { done: 0, planned: 0, html: html`<section class="card empty" style="margin-top:16px"><h2>No exercises on ${weekday(day.weekday).long} yet</h2>
+    return { done: 0, planned: 0, html: html`<section class="card empty" style="margin-top:16px"><h2>No exercises in ${dayName(day)} yet</h2>
       <p>Add them in Program, then come back to log.</p>
       <a class="btn btn-secondary btn-block" href="#/program/day/${day.id}">Add exercises</a></section>` };
   }
@@ -174,24 +199,67 @@ function workout(cycle, day, week, dateISO) {
   };
 }
 
-function nextTrainingDay(cycleId, fromWd) {
-  const days = store.days(cycleId);
-  for (let k = 1; k <= 7; k++) {
-    const wd = ((fromWd - 1 + k) % 7) + 1;
-    const d = days.find((x) => x.weekday === wd);
-    if (d) return d;
+/** A week's workouts: still to do (starting after the last one done, so the next is first) and done. */
+function weekPlan(cycle, week) {
+  const list = store.days(cycle.id);
+  const sessions = store.sessions(cycle.id).filter((s) => s.week === week && store.setsOf(s.id).length);
+  const doneOn = new Map(sessions.map((s) => [s.dayId, s.date]));
+  const lastDone = sessions.length ? list.findIndex((d) => d.id === sessions[sessions.length - 1].dayId) : -1;
+  const rotated = lastDone < 0 ? list : [...list.slice(lastDone + 1), ...list.slice(0, lastDone + 1)];
+  return { list, doneOn, todo: rotated.filter((d) => !doneOn.has(d.id)), done: list.filter((d) => doneOn.has(d.id)) };
+}
+
+function workoutCard(d, next) {
+  const n = store.slots(d.id).length;
+  return html`<button type="button" class="card wo-card pressable" data-action="pick-workout" data-day="${d.id}">
+    <span class="grow"><span class="title">${dayName(d)}</span>
+      <span class="meta">${n ? plural(n, 'exercise') : 'No exercises yet'}${next ? ' · next up' : ''}</span></span>
+    ${next ? html`<span class="wo-start">Start</span>` : icon('next')}
+  </button>`;
+}
+
+function doneRow(d, doneOn, dateISO, isToday, week) {
+  const on = doneOn.get(d.id);
+  const day = on === todayISO() ? 'Today' : weekday(isoWeekday(parseISO(on))).short;
+  const logged = store.setsOf(store.findSession(d.id, on).id).length;
+  const planned = store.slots(d.id).reduce((n, s) => n + store.targetsFor(s, week).setsMin, 0);
+  const when = logged < planned ? `${day} · ${logged} of ${planned} sets` : day;
+  const again = isToday ? 'today' : `on ${fmtShortWeekday(parseISO(dateISO))}`;
+  return html`<div class="wo-done">
+    <button type="button" class="wo-done-open pressable" data-action="open-logged" data-day="${d.id}" data-date="${on}" aria-label="Open ${dayName(d)}, logged ${when}">
+      <span class="grow">${dayName(d)}</span><span class="when">${when}</span>
+    </button>
+    ${on === dateISO ? '' : html`<button type="button" class="btn-tool wo-again" data-action="pick-workout" data-day="${d.id}" aria-label="Do ${dayName(d)} again ${again}">Again</button>`}
+  </div>`;
+}
+
+function pickerView(plan, dateISO, isToday, week, weekWord) {
+  if (!plan.list.length) {
+    return html`<section class="card empty" style="margin-top:16px"><h2>No workouts yet</h2>
+      <p>Add your workouts in Program, then pick one here whenever you train.</p>
+      <a class="btn btn-primary btn-block" href="#/program">Add workouts</a></section>`;
   }
-  return null;
+  const question = isToday ? 'What are you doing today?' : `What did you do on ${fmtShortWeekday(parseISO(dateISO))}?`;
+  // "Next up" only goes to a workout that has exercises to start, and it comes first.
+  const next = isToday ? plan.todo.find((d) => store.slots(d.id).length) : null;
+  const todo = next ? [next, ...plan.todo.filter((d) => d !== next)] : plan.todo;
+  return html`
+    ${todo.length
+      ? html`<h2 class="wo-head">${question}</h2>
+        <div class="wo-list">${todo.map((d) => workoutCard(d, d === next))}</div>`
+      : html`<h2 class="wo-head">Every workout is done ${weekWord}</h2>`}
+    ${plan.done.length ? html`${todo.length ? html`<h2 class="wo-head wo-head-sub">Done ${weekWord}</h2>` : ''}
+      <div class="wo-list wo-done-list">${plan.done.map((d) => doneRow(d, plan.doneOn, dateISO, isToday, week))}</div>` : ''}`;
 }
 
 // ---------- logging ----------
 
 /**
- * After logging set `index` of `exId`: whether that completes every planned set of the day,
+ * After logging set `index` of `exId`: whether that completes every planned set of the workout,
  * and the exercise that is probably next (more of this one, else the next card with sets left).
  */
-function afterSet(cycle, day, week, exId, index) {
-  const session = store.findSession(cycle.id, day.id, week);
+function afterSet(day, week, dateISO, exId, index) {
+  const session = store.findSession(day.id, dateISO);
   const logged = session ? store.setsOf(session.id) : [];
   const slots = store.slots(day.id);
   const open = slots.filter((slot) => {
@@ -208,11 +276,11 @@ function cardContext(card) {
   const cycle = store.activeCycle();
   return {
     cycle,
-    day: store.dayForWeekday(cycle.id, sel.wd),
+    day: store.get('days', sel.dayId),
     ex: store.get('exercises', card.dataset.ex),
     slot: card.dataset.slot ? store.get('slots', card.dataset.slot) : null,
-    dateISO: toISO(selectionDate(cycle)),
-    week: sel.week,
+    dateISO: sel.date,
+    week: weekOf(cycle, sel.date),
     key: card.dataset.key,
   };
 }
@@ -223,7 +291,7 @@ async function logSet(el, rerender) {
   const i = Number(row.dataset.i);
   const { cycle, day, ex, slot, dateISO, week, key } = cardContext(card);
   const u = training.unitFor(ex);
-  const session0 = store.findSession(cycle.id, day.id, week);
+  const session0 = store.findSession(day.id, dateISO);
   const existing = session0 && store.setsOf(session0.id, ex.id).find((s) => s.index === i);
 
   if (existing) {
@@ -263,18 +331,17 @@ async function logSet(el, rerender) {
   if (Number.isNaN(reps)) { rInput.focus(); return toast('Reps should be a whole number.'); }
 
   document.activeElement?.blur?.();
-  // Start the rest now, inside the tap, so iOS allows its sound. Past days are back-filling, so no
-  // timer; today or a later day (a cycle started early) is a live workout. ISO dates sort as text.
-  // The day's last planned set ends the workout instead: no rest, and no beep later.
-  if (dateISO >= todayISO()) {
-    const { dayDone, next } = afterSet(cycle, day, week, ex.id, i);
+  // Start the rest now, inside the tap, so iOS allows its sound. Back-filling a past day has no timer.
+  // The workout's last planned set ends it instead: no rest, and no beep later.
+  if (isLive(dateISO, session0)) {
+    const { dayDone, next } = afterSet(day, week, dateISO, ex.id, i);
     if (dayDone) timer.stop();
     else {
       timer.unlockAudio();
       timer.start({ seconds: ex.restSec || 90, exerciseId: ex.id, label: ex.name, next });
     }
   }
-  const session = await store.ensureSession(cycle.id, day.id, week, dateISO);
+  const session = await store.ensureSession(cycle, day.id, dateISO);
   const saved = await store.saveSet({ sessionId: session.id, exerciseId: ex.id, slotId: slot?.id, index: i, weight, unit: u, reps });
   drafts.delete(`${key}|${i}`);
   rerender();
@@ -294,71 +361,131 @@ const screen = {
   /** Tapping the Today tab again jumps back to today. */
   reselect() { sel = null; },
 
+  /** Coming back to the app on a new calendar day. */
+  resume({ rerender }) {
+    const cycle = store.activeCycle();
+    if (cycle && sel && isStale(cycle)) rerender();
+  },
+
   render() {
     const cycle = store.activeCycle();
+    const today = todayISO();
     if (!cycle) {
-      return html`<header class="screen-head"><h1>Today</h1><p class="sub">${fmtLong(parseISO(todayISO()))}</p></header>
+      return html`<header class="screen-head"><h1>Today</h1><p class="sub">${fmtLong(parseISO(today))}</p></header>
         <section class="card empty"><h2>No active cycle</h2><p>Start one from Program.</p>
         <a class="btn btn-primary btn-block" href="#/program">Open Program</a></section>`;
     }
-    if (!sel || sel.cycleId !== cycle.id) sel = todaySel(cycle);
-    sel.week = clamp(sel.week, 1, lastOpenWeek(cycle));
-    const date = selectionDate(cycle);
-    const dateISO = toISO(date);
-    const isToday = dateISO === todayISO();
-    const day = store.dayForWeekday(cycle.id, sel.wd);
     const wkNow = store.currentWeek(cycle);
+    if (wkNow < 1) {
+      const monday = mondayOf(parseISO(today));
+      const earlyEnd = cycleEnd({ ...cycle, startDate: today });
+      return html`<header class="screen-head"><h1>Today</h1><p class="sub">${fmtShortWeekday(parseISO(today))}</p></header>
+        <section class="card empty"><h2>${cycle.name} starts ${fmtShortWeekday(parseISO(cycle.startDate))}</h2>
+          <p>Starting early? Today would make ${weekRange(monday)} your Week 1, and the cycle would end ${fmtDay(earlyEnd)} instead of ${fmtDay(cycleEnd(cycle))}.</p>
+          <button type="button" class="btn btn-primary btn-block" data-action="start-today">Start today</button></section>`;
+    }
+    if (sel && isStale(cycle)) sel = null;
+    if (!sel) sel = newSel(cycle);
+    const dateISO = sel.date;
+    const date = parseISO(dateISO);
+    const isToday = dateISO === today;
+    const week = weekOf(cycle, dateISO);
 
-    let banner = '';
-    if (wkNow > cycle.weeks) {
-      banner = html`<section class="card empty" style="margin-bottom:16px"><h2>${cycle.name} ended ${fmtDay(cycleEnd(cycle))}</h2>
-        <p>You can still fill in missed days. Start the next cycle in Program.</p></section>`;
-    } else if (wkNow < 1) {
-      banner = html`<section class="card empty" style="margin-bottom:16px"><h2>${cycle.name} starts ${fmtShortWeekday(parseISO(cycle.startDate))}</h2>
-        <p>Week 1 is open in case you start early.</p></section>`;
+    // The workout on screen: the one picked, or the one already logged on this date.
+    let day = null;
+    if (!sel.picking) {
+      if (sel.dayId) day = store.get('days', sel.dayId);
+      if (day?.deleted && !store.findSession(day.id, dateISO)) day = null;
+      if (!day) {
+        const on = store.sessionsOn(cycle.id, dateISO)[0];
+        day = on ? store.get('days', on.dayId) : null;
+      }
+      sel.dayId = day?.id || null;
     }
 
     let body;
     let count = '';
     if (day) {
-      const w = workout(cycle, day, sel.week, dateISO);
+      const w = workout(cycle, day, dateISO);
       body = w.html;
       if (w.planned) count = html`<span class="head-count" aria-label="${w.done} of ${w.planned} sets logged">${w.done} / ${w.planned} sets</span>`;
     } else {
-      const next = nextTrainingDay(cycle.id, sel.wd);
-      body = html`<section class="card empty" style="margin-top:16px"><h2>Rest day</h2>
-        <p>${next ? `Next: ${weekday(next.weekday).long}, ${dayName(next)}. Pick a day above to log a different one.` : 'No training days are set yet.'}</p>
-        ${next ? '' : html`<a class="btn btn-primary btn-block" href="#/program">Set up your days</a>`}</section>`;
+      const plan = weekPlan(cycle, week);
+      const weekWord = week === wkNow ? 'this week' : 'that week';
+      body = pickerView(plan, dateISO, isToday, week, weekWord);
+      if (plan.list.length) count = html`<span class="head-count">${plan.done.length} of ${plan.list.length} ${weekWord}</span>`;
     }
+    const session = day && store.findSession(day.id, dateISO);
+    const hasLog = !!session && store.setsOf(session.id).length > 0;
+    const heading = isToday ? (day ? dayName(day) : 'Today') : fmtShortWeekday(date);
+    let sub = day ? dayName(day) : '';
+    if (isToday) sub = day ? `Today · ${fmtShortWeekday(date)}` : fmtShortWeekday(date);
 
     return html`
       <header class="screen-head today-head">
-        <div class="title-row"><h1>${isToday ? (day ? dayName(day) : 'Rest day') : fmtShortWeekday(date)}</h1>${count}</div>
+        <div class="title-row"><h1 tabindex="-1">${heading}</h1>${count}</div>
         <div class="sub-row">
-          <p class="sub">${isToday ? `Today · ${fmtShortWeekday(date)}` : (day ? dayName(day) : 'Rest day')}</p>
-          ${isToday ? '' : html`<button type="button" class="btn-tool" data-action="go-today">Back to today</button>`}
+          <p class="sub">${sub}</p>
+          <span class="sub-tools">
+            ${day ? html`<button type="button" class="btn-tool" data-action="change-workout">${hasLog ? 'Other workouts' : 'Change workout'}</button>` : ''}
+            ${isToday ? '' : html`<button type="button" class="btn-tool" data-action="go-today">Back to today</button>`}
+          </span>
         </div>
       </header>
-      ${banner}
-      ${weekNav(cycle)}
-      ${dayStrip(cycle)}
+      ${wkNow > cycle.weeks ? html`<section class="card empty" style="margin-bottom:16px"><h2>${cycle.name} ended ${fmtDay(cycleEnd(cycle))}</h2>
+        <p>You can still fill in missed days. Start the next cycle in Program.</p></section>` : ''}
+      ${weekNav(cycle, week)}
+      ${dayStrip(cycle, week)}
       ${body}
     `;
   },
 
   actions: {
     week(el, e, { rerender }) {
-      sel.week = clamp(sel.week + Number(el.dataset.dir), 1, lastOpenWeek(store.activeCycle()));
+      const cycle = store.activeCycle();
+      const next = toISO(addDays(parseISO(sel.date), 7 * Number(el.dataset.dir)));
+      sel = { ...sel, date: next > latestDate(cycle) ? latestDate(cycle) : next, dayId: null, picking: false };
       rerender();
+      refocus(`[data-action="week"][data-dir="${el.dataset.dir}"]:not(:disabled)`);
     },
-    'pick-day'(el, e, { rerender }) {
-      sel.wd = Number(el.dataset.wd);
+    'pick-date'(el, e, { rerender }) {
+      sel = { ...sel, date: el.dataset.date, dayId: null, picking: false };
       rerender();
+      refocus(`[data-action="pick-date"][data-date="${el.dataset.date}"]`);
+    },
+    'pick-workout'(el, e, { rerender }) {
+      sel = { ...sel, dayId: el.dataset.day, picking: false };
+      rerender();
+      window.scrollTo({ top: 0 });
+      refocus();
+    },
+    'open-logged'(el, e, { rerender }) {
+      sel = { ...sel, date: el.dataset.date, dayId: el.dataset.day, picking: false };
+      rerender();
+      window.scrollTo({ top: 0 });
+      refocus();
+    },
+    'change-workout'(el, e, { rerender }) {
+      sel = { ...sel, dayId: null, picking: true };
+      rerender();
+      window.scrollTo({ top: 0 });
+      refocus();
     },
     'go-today'(el, e, { rerender }) {
       sel = null;
       rerender();
       window.scrollTo({ top: 0 });
+      refocus();
+    },
+    async 'start-today'(el, e, { rerender }) {
+      const cycle = store.activeCycle();
+      const before = cycle.startDate;
+      await store.patch('cycles', cycle.id, { startDate: todayISO() });
+      sel = null;
+      rerender();
+      toast(`${cycle.name} starts today`, {
+        action: { label: 'Undo', run: async () => { await store.patch('cycles', cycle.id, { startDate: before }); sel = null; rerender(); } },
+      });
     },
     log: (el, e, { rerender }) => logSet(el, rerender),
     'add-row'(el, e, { rerender }) {
@@ -405,11 +532,11 @@ const screen = {
   async change(e) {
     const t = e.target;
     if (t.dataset?.kind !== 'note') return;
-    const { cycle, day, ex, dateISO, week, key } = cardContext(t.closest('.log-card'));
+    const { cycle, day, ex, dateISO, key } = cardContext(t.closest('.log-card'));
     const text = t.value.trim();
-    const existing = store.findSession(cycle.id, day.id, week);
+    const existing = store.findSession(day.id, dateISO);
     if (!existing && !text) return;
-    const session = existing || await store.ensureSession(cycle.id, day.id, week, dateISO);
+    const session = existing || await store.ensureSession(cycle, day.id, dateISO);
     await store.saveNote(session.id, ex.id, text);
     if (!text) notesOpen.delete(key);
   },

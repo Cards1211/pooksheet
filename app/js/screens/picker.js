@@ -1,8 +1,8 @@
 import * as store from '../store.js';
 import { html, icon } from '../util.js';
-import { weekday } from '../dates.js';
 import { toast, backLink } from '../ui.js';
 import { openSlot } from './day.js';
+import { dayName } from './common.js';
 
 let catalogPromise = null;
 const loadCatalog = () => {
@@ -29,7 +29,7 @@ function row({ name, sub, ex, grp, disabled, create }) {
     ${ex ? html`data-ex="${ex}"` : html`data-name="${name}" data-group="${grp || ''}"`}
     ${disabled ? 'aria-disabled="true"' : ''}>
     <span class="grow"><span class="nm">${create ? `Create “${name}”` : name}</span>${sub ? html`<span class="ct">${sub}</span>` : ''}</span>
-    ${disabled ? html`<span class="ct">On this day</span>` : icon('plus')}
+    ${disabled ? html`<span class="ct">In this workout</span>` : icon('plus')}
   </button>`;
 }
 
@@ -75,7 +75,7 @@ const screen = {
     const slot = replace ? store.get('slots', replace) : null;
     const replacing = slot ? store.get('exercises', slot.exerciseId) : null;
     return html`
-      <header class="screen-head pushed">${backLink(`#/program/day/${day.id}`, weekday(day.weekday).long)}
+      <header class="screen-head pushed">${backLink(`#/program/day/${day.id}`, dayName(day))}
         <h1>${replacing ? `Replace ${replacing.name}` : 'Add exercise'}</h1>
         ${replacing ? html`<p class="sub">Keeps its sets and reps. Past workouts stay as they were.</p>` : ''}
       </header>
@@ -142,7 +142,7 @@ const screen = {
       } else {
         const slot = await store.addSlot(day.id, ex.id);
         openSlot(day.id, slot.id);
-        toast(`Added ${ex.name} to ${weekday(day.weekday).long}`);
+        toast(`Added ${ex.name} to ${dayName(day)}`);
       }
       go(`#/program/day/${day.id}`);
     },

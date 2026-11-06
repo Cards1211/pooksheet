@@ -1,8 +1,8 @@
 import * as store from '../store.js';
 import { html, icon, plural } from '../util.js';
-import { WEEKDAYS, weekday, toISO, nextMonday, parseISO, fmtShortWeekday } from '../dates.js';
+import { toISO, nextMonday, parseISO, fmtShortWeekday } from '../dates.js';
 import { toast } from '../ui.js';
-import { dayCard, cycleDates } from './common.js';
+import { dayCard, dayName, cycleDates } from './common.js';
 
 let newCycleOpen = false;
 
@@ -42,7 +42,7 @@ function cycleCard(cycle) {
             <input class="input" type="date" name="startDate" value="${toISO(nextMonday())}" required></label>
           <label class="switch-row" style="margin-top:8px">
             <span><span class="label-text">Copy this program</span>
-              <small>${plural(dayCount, 'day')} and ${plural(slotCount, 'exercise')}. Your last numbers show as the reference.</small></span>
+              <small>${plural(dayCount, 'workout')} and ${plural(slotCount, 'exercise')}. Your last numbers show as the reference.</small></span>
             <input type="checkbox" class="switch" switch name="copy" ${slotCount ? 'checked' : ''}>
           </label>
           <p class="note">${cycle.name} is kept, and you can open it any time under Past cycles.</p>
@@ -56,14 +56,6 @@ function cycleCard(cycle) {
   </section>`;
 }
 
-function weekdayPicker(cycle) {
-  const taken = new Set(store.days(cycle.id).map((d) => d.weekday));
-  return html`<div class="weekdays" role="group" aria-label="Training days">
-    ${WEEKDAYS.map((w) => html`<button type="button" class="wd" data-action="toggle-weekday" data-wd="${w.n}"
-      aria-pressed="${String(taken.has(w.n))}" aria-label="${w.long}">${w.two}</button>`)}
-  </div>`;
-}
-
 export default {
   tab: 'program',
   depth: 0,
@@ -74,19 +66,25 @@ export default {
     const past = store.pastCycles();
     if (!cycle) {
       return html`<header class="screen-head"><h1>Program</h1></header>
-        <section class="card empty"><h2>No active cycle</h2><p>Start a cycle to plan your training days.</p>
+        <section class="card empty"><h2>No active cycle</h2><p>Start a cycle to plan your workouts.</p>
         <button type="button" class="btn btn-primary btn-block" data-action="first-cycle">Start Cycle ${past.length + 1}</button></section>`;
     }
     const days = store.days(cycle.id);
+    const removed = store.removedDays(cycle.id);
     return html`
       <header class="screen-head"><h1>Program</h1></header>
       ${cycleCard(cycle)}
-      <div class="section-head"><h2>Training days</h2><span class="count">${plural(days.length, 'day')} a week</span></div>
-      <p class="hint">Tap a weekday to turn it on or off. Its exercises are kept.</p>
-      ${weekdayPicker(cycle)}
-      <div class="stack" style="margin-top:16px">
-        ${days.length ? days.map(dayCard) : html`<section class="card empty"><h2>No training days yet</h2><p>Turn on the weekdays you train, then add exercises to each day.</p></section>`}
+      <div class="section-head"><h2>Workouts</h2><span class="count">${days.length || ''}</span></div>
+      ${days.length ? html`<p class="hint">Pick one on Today whenever you train. This order sets what’s suggested next.</p>` : ''}
+      <div class="stack">
+        ${days.length ? days.map(dayCard) : html`<section class="card empty"><h2>No workouts yet</h2><p>Add your workouts, then add exercises to each one.</p></section>`}
       </div>
+      <button type="button" class="btn btn-secondary btn-block" style="margin-top:12px" data-action="add-workout">${icon('plus')}Add workout</button>
+      ${removed.length ? html`
+        <div class="section-head"><h2>Removed workouts</h2></div>
+        <div class="stack">${removed.map(({ day, count }) => html`<section class="card row-card">
+          <span class="grow"><span class="title">${dayName(day)}</span><span class="meta" style="display:block">${plural(count, 'exercise')}</span></span>
+          <button type="button" class="btn-tool" data-action="bring-back" data-day="${day.id}">Bring back</button></section>`)}</div>` : ''}
       ${past.length ? html`
         <div class="section-head"><h2>Past cycles</h2></div>
         <div class="stack">${past.map((c) => html`<a class="card row-card pressable" href="#/program/cycle/${c.id}">
@@ -126,22 +124,16 @@ export default {
       rerender();
     },
 
-    async 'toggle-weekday'(el, e, { rerender }) {
-      const cycle = store.activeCycle();
-      const wd = Number(el.dataset.wd);
-      const name = weekday(wd).long;
-      const existing = store.dayForWeekday(cycle.id, wd);
-      if (existing) {
-        const n = store.slots(existing.id).length;
-        await store.removeDay(existing.id);
-        rerender();
-        toast(n ? `${name} is off. Tap it again to bring back its ${plural(n, 'exercise')}.` : `${name} is off`);
-      } else {
-        const back = await store.restoreDay(cycle.id, wd);
-        if (!back) await store.addDay(cycle.id, wd);
-        rerender();
-        toast(back ? `${name} is back with its ${plural(back, 'exercise')}` : `Added ${name}`);
-      }
+    async 'add-workout'(el, e, { go }) {
+      const day = await store.addDay(store.activeCycle().id);
+      go(`#/program/day/${day.id}`);
+    },
+
+    async 'bring-back'(el, e, { rerender }) {
+      const id = el.dataset.day;
+      const n = await store.restoreDay(id);
+      rerender();
+      toast(`${dayName(store.get('days', id))} is back with its ${plural(n, 'exercise')}`);
     },
   },
 };
