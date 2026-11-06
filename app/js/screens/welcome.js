@@ -13,10 +13,10 @@ export default {
       <section class="welcome">
         <img class="welcome-icon" src="icons/icon-192.png" width="84" height="84" alt="">
         <h1>PookSheet</h1>
-        <p class="lede">Your training, on your phone. Plan your days, log every set and keep each 8-week cycle. It works without internet, and your data stays on this phone.</p>
+        <p class="lede">Your training, on your phone. Plan your workouts, log every set and keep each 8-week cycle. It works without internet, and your data stays on this phone.</p>
         <div class="choices stack">
           <button type="button" class="card choice pressable" data-action="fresh">
-            <span class="grow"><span class="title">Start a new program</span><span class="meta">Pick your training days, then add exercises.</span></span>${icon('next')}
+            <span class="grow"><span class="title">Start a new program</span><span class="meta">Add your workouts, then their exercises.</span></span>${icon('next')}
           </button>
           <section class="card">
             <span class="title" style="display:block;font-weight:800;font-size:var(--fs-lg)">Already have a backup?</span>

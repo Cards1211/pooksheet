@@ -391,9 +391,8 @@ input[type="checkbox"].switch { accent-color: var(--switch-on); width: 51px; hei
   box-shadow: inset 0 0 0 2px var(--line-strong);
   transition: background-color 160ms ease, box-shadow 160ms ease, transform var(--press) var(--ease-out);
 }
-.card .wd { box-shadow: none; background: var(--field); }
 .wd:active { transform: scale(0.92); }
-.wd[aria-pressed="true"], .wd[aria-checked="true"] { background: var(--select); color: var(--on-select); box-shadow: inset 0 0 0 1.5px var(--ring); }
+.wd[aria-pressed="true"] { background: var(--select); color: var(--on-select); box-shadow: inset 0 0 0 1.5px var(--ring); }
 .wd:disabled { opacity: 0.35; }
 .wd:disabled:active { transform: none; }
 

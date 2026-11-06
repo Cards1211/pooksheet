@@ -6,7 +6,7 @@ const CACHE = `pooksheet-${VERSION}`;
 const MATCH = { ignoreSearch: true, ignoreVary: true };
 
 // All or nothing: a bad connection can't leave a half-updated app, because a failed
-// download just keeps the version already on the phone.
+// download just keeps the version already on the phone. The app asks for another try.
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);

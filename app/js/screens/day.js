@@ -101,7 +101,7 @@ function slotEditor(day, s, ex, i, count) {
       <label class="field"><span class="field-label">Video link</span>
         <input class="input" type="url" data-field="link" data-ex="${ex.id}" value="${ex.link}" placeholder="https://" inputmode="url" autocapitalize="none" autocorrect="off" autocomplete="off" enterkeyhint="done">
       </label>
-      <span class="field-help">Name, load, LP, rest, cue and link belong to the exercise, so they change on every day it appears.</span>
+      <span class="field-help">Name, load, LP, rest, cue and link belong to the exercise, so they change everywhere it appears.</span>
     </div>
 
     <div class="tools">
