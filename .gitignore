@@ -1,0 +1,7 @@
+# This repository is public, so it holds only what gets published.
+# Everything else in this folder (docs, tools, private/) stays on this Mac.
+/*
+!/.gitignore
+!/.github/
+!/app/
+.DS_Store

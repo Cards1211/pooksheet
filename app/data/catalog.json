@@ -1,0 +1,662 @@
+{
+ "source": "Exercise Database tab of the user's training sheet",
+ "groups": [
+  "Chest",
+  "Back",
+  "Shoulders",
+  "Biceps",
+  "Triceps",
+  "Quads",
+  "Hamstrings",
+  "Glutes",
+  "Calves",
+  "Abs"
+ ],
+ "exercises": [
+  {
+   "name": "3-1-X Bench Press",
+   "group": "Chest",
+   "category": "Bench variation"
+  },
+  {
+   "name": "3-Second Pause Bench",
+   "group": "Chest",
+   "category": "Bench variation"
+  },
+  {
+   "name": "Close Grip Bench Press",
+   "group": "Chest",
+   "category": "Bench variation"
+  },
+  {
+   "name": "Larsen Press",
+   "group": "Chest",
+   "category": "Bench variation"
+  },
+  {
+   "name": "Spoto Bench Press",
+   "group": "Chest",
+   "category": "Bench variation"
+  },
+  {
+   "name": "Deficit Push-Up",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Flat Bench Press",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Flat Close Grip Bench Press",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Flat Dumbbell Press",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Flat Smith Machine Bench Press",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Machine Chest Press",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Push-Up",
+   "group": "Chest",
+   "category": "Flat press"
+  },
+  {
+   "name": "Cable Fly",
+   "group": "Chest",
+   "category": "Fly"
+  },
+  {
+   "name": "Dumbbell Fly",
+   "group": "Chest",
+   "category": "Fly"
+  },
+  {
+   "name": "Low-To-High Cable Fly",
+   "group": "Chest",
+   "category": "Fly"
+  },
+  {
+   "name": "Machine Chest Fly",
+   "group": "Chest",
+   "category": "Fly"
+  },
+  {
+   "name": "Pec Deck",
+   "group": "Chest",
+   "category": "Fly"
+  },
+  {
+   "name": "Deficit Feet-Elevated Push-Up",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Feet-Elevated Push-Up",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Incline Bench Press",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Incline Close Grip Bench Press",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Incline Dumbbell Press",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Incline Machine Chest Press",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Incline Smith Machine Bench Press",
+   "group": "Chest",
+   "category": "Incline press"
+  },
+  {
+   "name": "Barbell Pullover",
+   "group": "Back",
+   "category": "Isolation"
+  },
+  {
+   "name": "Cable Pullover",
+   "group": "Back",
+   "category": "Isolation"
+  },
+  {
+   "name": "Dumbbell Pullover",
+   "group": "Back",
+   "category": "Isolation"
+  },
+  {
+   "name": "Machine Pullover",
+   "group": "Back",
+   "category": "Isolation"
+  },
+  {
+   "name": "Barbell Row",
+   "group": "Back",
+   "category": "Row"
+  },
+  {
+   "name": "Cable Row",
+   "group": "Back",
+   "category": "Row"
+  },
+  {
+   "name": "Dumbbell Row",
+   "group": "Back",
+   "category": "Row"
+  },
+  {
+   "name": "Machine Row",
+   "group": "Back",
+   "category": "Row"
+  },
+  {
+   "name": "T-Bar Row",
+   "group": "Back",
+   "category": "Row"
+  },
+  {
+   "name": "Chin-Ups",
+   "group": "Back",
+   "category": "Vertical pull"
+  },
+  {
+   "name": "Pull-Ups",
+   "group": "Back",
+   "category": "Vertical pull"
+  },
+  {
+   "name": "Pulldown",
+   "group": "Back",
+   "category": "Vertical pull"
+  },
+  {
+   "name": "Pullover",
+   "group": "Back",
+   "category": "Vertical pull"
+  },
+  {
+   "name": "Single-Arm Pulldown",
+   "group": "Back",
+   "category": "Vertical pull"
+  },
+  {
+   "name": "Barbell Push Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Machine Overhead Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Seated Barbell Overhead Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Seated Dumbbell Overhead Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Smith Machine Overhead Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Standing Dumbbell Overhead Press",
+   "group": "Shoulders",
+   "category": "Overhead press"
+  },
+  {
+   "name": "Barbell Face Pull",
+   "group": "Shoulders",
+   "category": "Rear delt"
+  },
+  {
+   "name": "Cable Face Pull",
+   "group": "Shoulders",
+   "category": "Rear delt"
+  },
+  {
+   "name": "Cable Rear Delt Crossover",
+   "group": "Shoulders",
+   "category": "Rear delt"
+  },
+  {
+   "name": "Dumbbell Face Pull",
+   "group": "Shoulders",
+   "category": "Rear delt"
+  },
+  {
+   "name": "Machine Rear Delt Fly",
+   "group": "Shoulders",
+   "category": "Rear delt"
+  },
+  {
+   "name": "Barbell Upright Row",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Cable Lateral Raise",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Cable Upright Row",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Dumbbell Lateral Raise",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Dumbbell Upright Row",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Machine Lateral Raise",
+   "group": "Shoulders",
+   "category": "Side delt"
+  },
+  {
+   "name": "Barbell Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Bayesian Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Dumbbell Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Incline Dumbbell Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Machine Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Machine Preacher Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Preacher Curl",
+   "group": "Biceps",
+   "category": "Curl"
+  },
+  {
+   "name": "Barbell Overhead Extension",
+   "group": "Triceps",
+   "category": "Overhead extension"
+  },
+  {
+   "name": "Cable Overhead Extension",
+   "group": "Triceps",
+   "category": "Overhead extension"
+  },
+  {
+   "name": "Dumbbell Overhead Extension",
+   "group": "Triceps",
+   "category": "Overhead extension"
+  },
+  {
+   "name": "Ez-Bar Overhead Extension",
+   "group": "Triceps",
+   "category": "Overhead extension"
+  },
+  {
+   "name": "Machine Overhead Extension",
+   "group": "Triceps",
+   "category": "Overhead extension"
+  },
+  {
+   "name": "Barbell JM Press",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Barbell Skullcrusher",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Cable Pushdown",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Dips",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Dumbbell JM Press",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Dumbbell Skullcrusher",
+   "group": "Triceps",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Machine Dips",
+   "group": "Triceps",
+   "category": "Pushdown"
+  },
+  {
+   "name": "Machine-Assisted Dips",
+   "group": "Triceps",
+   "category": "Pushdown"
+  },
+  {
+   "name": "Barbell Skullover",
+   "group": "Triceps",
+   "category": "Skullcrusher"
+  },
+  {
+   "name": "Dumbbell Skullover",
+   "group": "Triceps",
+   "category": "Skullcrusher"
+  },
+  {
+   "name": "Ez-Bar Skullcrusher",
+   "group": "Triceps",
+   "category": "Skullcrusher"
+  },
+  {
+   "name": "Machine Preacher Tricep Extension",
+   "group": "Triceps",
+   "category": "Skullcrusher"
+  },
+  {
+   "name": "Front Squat",
+   "group": "Quads",
+   "category": "Compound"
+  },
+  {
+   "name": "High Bar Squat",
+   "group": "Quads",
+   "category": "Compound"
+  },
+  {
+   "name": "Low Bar Squat",
+   "group": "Quads",
+   "category": "Compound"
+  },
+  {
+   "name": "Banded Leg Extension",
+   "group": "Quads",
+   "category": "Isolation"
+  },
+  {
+   "name": "Leg Extensions",
+   "group": "Quads",
+   "category": "Isolation"
+  },
+  {
+   "name": "Reverse Nordic Curl",
+   "group": "Quads",
+   "category": "Isolation"
+  },
+  {
+   "name": "Sissy Squats",
+   "group": "Quads",
+   "category": "Isolation"
+  },
+  {
+   "name": "Goblet Squat",
+   "group": "Quads",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Hack Squat",
+   "group": "Quads",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Leg Press",
+   "group": "Quads",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Smith Machine Feet Forward Squat",
+   "group": "Quads",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Smith Machine Squat",
+   "group": "Quads",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Paused Squat",
+   "group": "Quads",
+   "category": "Squat variation"
+  },
+  {
+   "name": "Cable Leg Curl",
+   "group": "Hamstrings",
+   "category": "Curl"
+  },
+  {
+   "name": "Lying Leg Curl",
+   "group": "Hamstrings",
+   "category": "Curl"
+  },
+  {
+   "name": "Nordic Curl",
+   "group": "Hamstrings",
+   "category": "Curl"
+  },
+  {
+   "name": "Seated Leg Curl",
+   "group": "Hamstrings",
+   "category": "Curl"
+  },
+  {
+   "name": "Standing Leg Curl",
+   "group": "Hamstrings",
+   "category": "Curl"
+  },
+  {
+   "name": "Deficit Deadlift",
+   "group": "Hamstrings",
+   "category": "Deadlift"
+  },
+  {
+   "name": "Opposite stance deadlift",
+   "group": "Hamstrings",
+   "category": "Deadlift"
+  },
+  {
+   "name": "Paused Deadlift",
+   "group": "Hamstrings",
+   "category": "Deadlift"
+  },
+  {
+   "name": "Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Deadlift"
+  },
+  {
+   "name": "Trap Bar Deadlift",
+   "group": "Hamstrings",
+   "category": "Deadlift"
+  },
+  {
+   "name": "Barbell Good Morning",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Barbell Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Dumbbell Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Single-Leg Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Smith Machine Good Morning",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Sumo Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Trap Bar Romanian Deadlift",
+   "group": "Hamstrings",
+   "category": "Hinge"
+  },
+  {
+   "name": "Belt Squat",
+   "group": "Glutes",
+   "category": "Powerlifting accessory"
+  },
+  {
+   "name": "Barbell Lunge",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Barbell Split Squat",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Barbell Step-Up",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Dumbbell Lunge",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Dumbbell Split Squat",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Dumbbell Step-Up",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Single-Leg Hip Thrust",
+   "group": "Glutes",
+   "category": "Single-leg"
+  },
+  {
+   "name": "Bilateral Calf Raise",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Leg Press Calf Raise",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Machine Calf Raise",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Seated Calf Raise Machine",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Single-Leg Calf Raise",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Smith Machine Calf Raise",
+   "group": "Calves",
+   "category": "Calf raise"
+  },
+  {
+   "name": "Cable Crunch",
+   "group": "Abs",
+   "category": "Abs"
+  },
+  {
+   "name": "Decline Crunch",
+   "group": "Abs",
+   "category": "Abs"
+  },
+  {
+   "name": "Hanging Leg Raise",
+   "group": "Abs",
+   "category": "Abs"
+  },
+  {
+   "name": "Lying Leg Raise",
+   "group": "Abs",
+   "category": "Abs"
+  },
+  {
+   "name": "Machine Crunch",
+   "group": "Abs",
+   "category": "Abs"
+  },
+  {
+   "name": "V-Ups",
+   "group": "Abs",
+   "category": "Abs"
+  }
+ ]
+}

@@ -1,0 +1,172 @@
+/* Design tokens. Every theme swaps by redefining the same variables.
+   Default (Auto) follows the device between Light and Dark;
+   data-theme="light|dark|barnacles" on <html> overrides it. */
+
+@font-face {
+  font-family: "Nunito";
+  src: url("../fonts/nunito-latin.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* type: fixed rem scale, ratio about 1.2 */
+  --font: "Nunito", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --fs-xs: 0.75rem;     /* 12 */
+  --fs-sm: 0.9375rem;   /* 15 */
+  --fs-md: 1.0625rem;   /* 17, iOS body */
+  --fs-lg: 1.1875rem;   /* 19, bold labels on fills count as large text */
+  --fs-xl: 1.5rem;      /* 24 */
+  --fs-2xl: 2.125rem;   /* 34, iOS large title */
+  --fs-timer: 4.5rem;   /* 72, the big rest countdown only */
+
+  /* shape */
+  --r-card: 24px;
+  --r-field: 14px;
+  --r-btn: 16px;
+  --r-pill: 999px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --press: 140ms;
+
+  /* layout */
+  --gutter: 16px;
+  --tabbar-h: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* ---- light (pinned palette; ground and action swapped by the user 2026-11-05) ---- */
+  color-scheme: light;
+  --bg: #FFB7C5;              /* cherry blossom */
+  --surface: #D7E8B2;         /* pistachio cream */
+  --field: #F1F7E3;           /* inputs on cards */
+  --text: #0A3323;            /* dark green for all text and icons */
+  --text-2: #0A3323;          /* pinned: all light-mode text is dark green; hierarchy comes from weight and size */
+  --line: rgba(10, 51, 35, 0.12);
+  --line-strong: rgba(10, 51, 35, 0.32);
+  --action: #FFE3EC;          /* pink chiffon */
+  --on-action: #0A3323;       /* 11.6:1 */
+  --select: #A9B8FF;          /* periwinkle pop */
+  --on-select: #0A3323;       /* 7.3:1 */
+  --progress: #A9B8FF;
+  --highlight: #F6C96B;       /* honey glow */
+  --on-highlight: #0A3323;    /* 8.9:1 */
+  --timer: var(--highlight);  /* the running rest bar */
+  --on-timer: var(--on-highlight);
+  --timer-arc: var(--text);   /* countdown ring: honey on the pale track was too faint (1.4:1) */
+  --switch-on: var(--text);   /* a pink chiffon "on" switch vanished on pistachio (1.1:1) */
+  --scrim: rgba(10, 51, 35, 0.35); /* behind the countdown sheet */
+  --toast-bg: #0A3323;
+  --toast-text: #FFB7C5;
+  --focus: #0A3323;
+  --dot: var(--highlight);
+  --selection-bg: var(--highlight);
+  --ring: #0A3323;            /* outlines filled pastel states so they read on pastel grounds */
+  --choice-edge: #0A3323;     /* edge of a chosen row in a list */
+  --knob: #F1F7E3;
+  --shadow-card: 0 1px 2px rgba(10, 51, 35, 0.08), 0 8px 24px rgba(10, 51, 35, 0.10);
+  --shadow-btn: 0 1px 2px rgba(10, 51, 35, 0.10), 0 4px 12px rgba(10, 51, 35, 0.10);
+  --shadow-lift: 0 14px 32px rgba(10, 51, 35, 0.20);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0A3323;            /* dark green */
+    --surface: #105666;       /* midnight green */
+    --field: #0D4444;         /* beige text 9.8:1 */
+    --text: #F7F4D5;          /* beige */
+    --text-2: #BDCCB9;        /* 4.9:1 on cards, 9:1 on ground */
+    --line: rgba(247, 244, 213, 0.12);
+    --line-strong: rgba(247, 244, 213, 0.34);
+    --action: #839958;        /* moss green */
+    --on-action: #0A3323;     /* 4.4:1, labels on moss are set 19px+ bold */
+    --select: #F7F4D5;
+    --on-select: #0A3323;     /* 12.5:1 */
+    --progress: #839958;
+    --highlight: #D3968C;     /* rosy brown */
+    --on-highlight: #0A3323;  /* 5.6:1 */
+    --timer-arc: var(--highlight); /* rosy, 4.4:1 on the field track */
+    --switch-on: var(--action);
+    --toast-bg: #F7F4D5;
+    --toast-text: #0A3323;
+    --focus: #F7F4D5;
+    --ring: transparent;
+    --choice-edge: #BDCCB9;
+    --knob: #F7F4D5;
+    --shadow-card: none;
+    --shadow-btn: none;
+    --shadow-lift: 0 16px 36px rgba(0, 0, 0, 0.38);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0A3323;
+  --surface: #105666;
+  --field: #0D4444;
+  --text: #F7F4D5;
+  --text-2: #BDCCB9;
+  --line: rgba(247, 244, 213, 0.12);
+  --line-strong: rgba(247, 244, 213, 0.34);
+  --action: #839958;
+  --on-action: #0A3323;
+  --select: #F7F4D5;
+  --on-select: #0A3323;
+  --progress: #839958;
+  --highlight: #D3968C;
+  --on-highlight: #0A3323;
+  --timer-arc: var(--highlight);
+  --switch-on: var(--action);
+  --toast-bg: #F7F4D5;
+  --toast-text: #0A3323;
+  --focus: #F7F4D5;
+  --ring: transparent;
+  --choice-edge: #BDCCB9;
+  --knob: #F7F4D5;
+  --shadow-card: none;
+  --shadow-btn: none;
+  --shadow-lift: 0 16px 36px rgba(0, 0, 0, 0.38);
+}
+
+/* ---- Blue Barnacles (user palette, 2026-11-05; recoloured by the user the same day) ----
+   Ground Bluebell Frost #9693D6, actions Chive Blossom #775B89 (briefly Scorpion Grass, then restored),
+   cards Donnegal #B5D4C8, selection Shrubbery #AEC891, progress Benimidori #7872A5.
+   None of the six is dark enough for text, so the ink is a deep plum taken from Chive Blossom. */
+:root[data-theme="barnacles"] {
+  color-scheme: light;
+  --bg: #9693D6;              /* bluebell frost */
+  --surface: #B5D4C8;         /* donnegal */
+  --field: #DEECE6;           /* donnegal lifted toward white */
+  --text: #241B30;            /* plum ink: 5.8:1 on ground, 10.4:1 on cards */
+  --text-2: #2E2440;          /* 5.2:1 on ground, 9.2:1 on cards */
+  --line: rgba(36, 27, 48, 0.12);
+  --line-strong: rgba(36, 27, 48, 0.32);
+  --action: #775B89;          /* chive blossom (restored by the user) */
+  --on-action: #FFFFFF;       /* 5.8:1 */
+  --select: #AEC891;          /* shrubbery */
+  --on-select: #241B30;       /* 9.0:1 */
+  --progress: #7872A5;        /* benimidori */
+  --highlight: #9693D6;       /* bluebell frost, used on cards; on the ground it would vanish */
+  --on-highlight: #241B30;    /* 5.8:1 */
+  --timer: var(--action);     /* chive: the bluebell highlight is the ground colour here */
+  --on-timer: var(--on-action); /* white, 5.8:1 */
+  --timer-arc: var(--action); /* 4.7:1 on the field track */
+  --switch-on: var(--action);
+  --scrim: rgba(36, 27, 48, 0.35); /* plum ink, not green */
+  --dot: #241B30;             /* logged-day dot sits on the ground, which is bluebell */
+  --selection-bg: #AEC891;
+  --toast-bg: #241B30;
+  --toast-text: #DEECE6;
+  --focus: #241B30;
+  --ring: #241B30;
+  --choice-edge: #241B30;
+  --knob: #DEECE6;
+  --shadow-card: 0 1px 2px rgba(36, 27, 48, 0.08), 0 8px 24px rgba(36, 27, 48, 0.10);
+  --shadow-btn: 0 1px 2px rgba(36, 27, 48, 0.10), 0 4px 12px rgba(36, 27, 48, 0.10);
+  --shadow-lift: 0 14px 32px rgba(36, 27, 48, 0.22);
+}
