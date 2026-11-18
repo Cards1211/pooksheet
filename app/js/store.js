@@ -390,6 +390,30 @@ export async function saveNote(sessionId, exerciseId, text) {
   if (text) await commit([['notes', make('notes', { sessionId, exerciseId, text })]]);
 }
 
+// ---------- body weight ----------
+
+/** Body weight entries, oldest first. One per day. */
+export const bodyweights = () => mine('bodyweights').sort((a, b) => a.date.localeCompare(b.date));
+
+/** Save the weight for a day; a second save the same day replaces the first. */
+export async function saveBodyweight(date, weight, unit) {
+  const found = mine('bodyweights').find((b) => b.date === date);
+  if (found) return patch('bodyweights', found.id, { weight, unit });
+  const rec = make('bodyweights', { date, weight, unit });
+  await commit([['bodyweights', rec]]);
+  return rec;
+}
+
+export const removeBodyweight = (id) => setDeleted([['bodyweights', get('bodyweights', id)]], true);
+
+/** Undo a delete, unless that day has a new entry by now. */
+export async function restoreBodyweight(items) {
+  const [, rec] = items[0];
+  if (mine('bodyweights').some((b) => b.date === rec.date)) return false;
+  await restore(items);
+  return true;
+}
+
 // ---------- backup ----------
 
 export function exportBackup() {

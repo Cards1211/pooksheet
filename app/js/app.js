@@ -12,6 +12,7 @@ import day from './screens/day.js';
 import picker from './screens/picker.js';
 import cycle from './screens/cycle.js';
 import progress from './screens/progress.js';
+import exerciseHistory from './screens/history.js';
 import settings from './screens/settings.js';
 import welcome from './screens/welcome.js';
 
@@ -22,6 +23,7 @@ const ROUTES = [
   [/^\/program\/day\/([\w-]+)\/add$/, picker, ['id']],
   [/^\/program\/cycle\/([\w-]+)$/, cycle, ['id']],
   [/^\/progress$/, progress],
+  [/^\/progress\/exercise\/([\w-]+)$/, exerciseHistory, ['id']],
   [/^\/settings$/, settings],
   [/^\/welcome$/, welcome],
 ];
